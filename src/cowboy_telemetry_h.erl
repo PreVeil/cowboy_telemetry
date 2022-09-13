@@ -6,8 +6,23 @@
 -export([info/3]).
 -export([terminate/3]).
 -export([early_error/5]).
+-export([add_ignored_routes/1]).
 
+add_ignored_routes(Routes) ->
+    lists:foreach(fun(Path) -> persistent_term:put({ignore_cowboy_metric_path, Path}, true) end, Routes).
+
+init(StreamID, #{path := Path} = Req, Opts) ->
+    case persistent_term:get({ignore_cowboy_metric_path, Path}, false) of
+        true ->
+            Opts0 = maps:put(metrics_callback, fun(_) -> ok end, Opts),
+            cowboy_metrics_h:init(StreamID, Req, Opts0);
+        _ ->
+            init0(StreamID, Req, Opts)
+    end;
 init(StreamID, Req, Opts) ->
+    init0(StreamID, Req, Opts).
+
+init0(StreamID, Req, Opts) ->
     telemetry:execute(
         [cowboy, request, start],
         #{system_time => erlang:system_time()},
