@@ -7,16 +7,24 @@
 -export([terminate/3]).
 -export([early_error/5]).
 -export([add_ignored_routes/1]).
+-export([add_override_routes/2]).
 
 add_ignored_routes(Routes) ->
-    lists:foreach(fun(Path) -> persistent_term:put({ignore_cowboy_metric_path, Path}, true) end, Routes).
+    lists:foreach(fun(Path) -> persistent_term:put({override_cowboy_metric_path, Path}, ignore) end, Routes).
+
+add_override_routes(Fun, Routes) ->
+    lists:foreach(fun(Path) -> persistent_term:put({override_cowboy_metric_path, Path}, Fun) end, Routes).
 
 init(StreamID, #{path := Path} = Req, Opts) ->
-    case persistent_term:get({ignore_cowboy_metric_path, Path}, false) of
-        true ->
+    case persistent_term:get({override_cowboy_metric_path, Path}, false) of
+        ignore ->
             Opts0 = maps:put(metrics_callback, fun(_) -> ok end, Opts),
             cowboy_metrics_h:init(StreamID, Req, Opts0);
-        _ ->
+	Fun when is_function(Fun) -> 		    
+            Fun(Req),
+            Opts0 = maps:put(metrics_callback, fun(_) -> ok end, Opts),
+            cowboy_metrics_h:init(StreamID, Req, Opts0);
+	_ ->
             init0(StreamID, Req, Opts)
     end;
 init(StreamID, Req, Opts) ->
