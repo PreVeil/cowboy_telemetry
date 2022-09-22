@@ -25,7 +25,13 @@ init(StreamID, #{path := Path} = Req, Opts) ->
             Opts0 = maps:put(metrics_callback, fun(_) -> ok end, Opts),
             cowboy_metrics_h:init(StreamID, Req, Opts0);
 	_ ->
-            init0(StreamID, Req, Opts)
+            case persistent_term:get(pv_statistics, true) of		    
+                true -> 
+                   init0(StreamID, Req, Opts);
+		_ ->
+	           Opts0 = maps:put(metrics_callback, fun(_) -> ok end, Opts),
+	           cowboy_metrics_h:init(StreamID, Req, Opts0)
+	    end	    
     end;
 init(StreamID, Req, Opts) ->
     init0(StreamID, Req, Opts).
