@@ -7,7 +7,7 @@
 -export([terminate/3]).
 -export([early_error/5]).
 -export([add_ignored_routes/1]).
--export([add_override_routes/2]).
+-export([add_override_routes/1]).
 
 add_ignored_routes(Routes) ->
     lists:foreach(fun(Path) -> persistent_term:put({override_cowboy_metric_path, Path}, ignore) end, Routes).
