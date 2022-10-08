@@ -12,8 +12,8 @@
 add_ignored_routes(Routes) ->
     lists:foreach(fun(Path) -> persistent_term:put({override_cowboy_metric_path, Path}, ignore) end, Routes).
 
-add_override_routes(Fun, Routes) ->
-    lists:foreach(fun(Path) -> persistent_term:put({override_cowboy_metric_path, Path}, Fun) end, Routes).
+add_override_routes(Routes) ->
+    lists:foreach(fun({Path, Fun}) -> persistent_term:put({override_cowboy_metric_path, Path}, Fun) end, Routes).
 
 init(StreamID, #{path := Path} = Req, Opts) ->
     case persistent_term:get({override_cowboy_metric_path, Path}, false) of
